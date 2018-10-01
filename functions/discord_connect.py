@@ -26,11 +26,6 @@ def getTime():
     t = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
     return t
 
-# function for formmated text in console (for debugging purposses)
-def dprint(data):
-    if DEBUG:
-        print(getTime()+'\t [DEBUG] - '+data)
-
 # get starting time
 start = getTime()
 
