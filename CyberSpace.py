@@ -6,8 +6,8 @@
 ==============================================================
 """
 
-from secrets.discord_secrets import *			# Import secret info for discord and firebase login
-from functions.discord_connect import *			# Import functions to connect discord
+from secrets.discord_secrets import *		# Import secret info for discord and firebase login
+from functions.discord_connect import *		# Import functions to connect discord
 
 
 def startBot():
