@@ -15,39 +15,6 @@ try:
 except Exception as e:
 	print(e)
 
-defRole = {
-	'create_instant_invite': False,
-	'kick_members': False,
-	'ban_members': False,
-	'administrator': False,
-	'manage_channels': False,
-	'manage_guild': False,
-	'add_reactions': False,
-	'view_audit_log': False,
-	'priority_speaker': False,
-	'read_messages': False,
-	'send_messages': False,
-	'send_tts_messages': False,
-	'manage_messages': False,
-	'embed_links': False,
-	'attach_files': False,
-	'read_message_history': False,
-	'mention_everyone': False,
-	'external_emojis': False,
-	'connect': False,
-	'speak': False,
-	'mute_members': False,
-	'deafen_members': False,
-	'move_members': False,
-	'use_voice_activation': False,
-	'change_nickname': False,
-	'manage_nicknames': False,
-	'manage_roles': False,
-	'manage_webhooks': False,
-	'manage_emojis': False
-	}
-
-
 @client.command(pass_context=True)
 async def clear(ctx):
 	guild = ctx.message.guild
@@ -134,6 +101,37 @@ async def join(ctx, *args):
 				#print(cat.name)
 				
 				channel = await guild.create_text_channel(game, category=cat)
+
+				perms = discord.PermissionOverwrite()
+				perms.create_instant_invite = False
+				perms.kick_members = False
+				perms.ban_members = False
+				perms.administrator = False
+				perms.manage_channels = False
+				perms.manage_guild = False
+				perms.add_reactions = False
+				perms.view_audit_log = False
+				perms.read_messages = True
+				perms.send_messages = True
+				perms.send_tts_messages = False
+				perms.manage_messages = False
+				perms.embed_links = False
+				perms.attach_files = False
+				perms.read_message_history = True
+				perms.mention_everyone = False
+				perms.external_emojis = False
+				perms.connect = False
+				perms.speak = False
+				perms.mute_members = False
+				perms.deafen_members = False
+				perms.move_members = False
+				perms.use_voice_activation = False
+				perms.change_nickname = False
+				perms.manage_nicknames = False
+				perms.manage_roles = False
+				perms.manage_webhooks = False
+				perms.manage_emojis = False
+				await channel.set_permissions(user, overwrite=perms)
 				
 				with open(JSON_SERVERS, 'w') as outfile:
 					data = {'count': currChannel+1}
