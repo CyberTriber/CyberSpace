@@ -60,6 +60,7 @@ async def clear(ctx):
 	for name in roles:
 		if name.name.startswith('hra-'):
 			await roleList[name.name].delete()
+			await asyncio.sleep(1)
 	
 	cat = client.get_all_channels()
 	for channel in cat:
@@ -68,6 +69,7 @@ async def clear(ctx):
 
 	for c in chList:
 		await chList[c].delete()
+		await asyncio.sleep(1)
 
 	with open(JSON_SERVERS, 'w') as outfile:
 				data = {'count': 0}
@@ -77,58 +79,70 @@ async def clear(ctx):
 
 @client.command(pass_context=True)
 async def join(ctx, *args):
-	guild = ctx.message.guild
 	user = ctx.message.author
-	roles = guild.roles
-	#print(roles)
-	names = []
-	roleList = {}
-	for i in roles:
-		roleList[i.name] = i.id
-		#print(i.id)
+	userRole = user.roles
+	uRoles = []
+	for r in userRole:
+		if r.name.startswith('hra-'):
+			uRoles.append(r.name)
+	
+	matching = [r for r in uRoles if "hra-" in r]
+	games = ''
+	for g in matching:
+		games += g+' '
 
-	for name in roles:
-		if name.name.startswith('hra-'):
-			names.append(name.name)
-	if len(args) == 1:
-		if args[0] in names:
-			if roleList[args[0]]:
-				rid = roleList[args[0]]
-				role = await guild.roles(rid)
-				await user.add_roles(role)
-		else:
-			await ctx.send('Taková hra neexistuje')
-
-	elif len(args) == 0:
-		if os.path.isfile(JSON_SERVERS):
-			currChannel = 1
-			with open(JSON_SERVERS, 'r') as outfile:
-				srv = json.load(outfile)
-				currChannel = int(srv['count'])
-		else:
-			currChannel = CURR_CH
-			with open(JSON_SERVERS, 'w') as outfile:
-				data = {'count': currChannel}
-				json.dump(data, outfile)
-
-		#await ctx.send(guild)
-		if not currChannel:
-			currChannel = 0
-		game = 'hra-'+str(currChannel)
-		try:
-			cat = guild.get_channel(GAME_CHANNEL).category
-			#print(cat.name)
-			
-			channel = await guild.create_text_channel(game, category=cat)
-			
-			with open(JSON_SERVERS, 'w') as outfile:
-				data = {'count': currChannel+1}
-				json.dump(data, outfile)		
-			
-			role = await guild.create_role(name=game)
-			await user.add_roles(role)
-			await ctx.send('User **'+user.name+'** has joined to **'+game+'**')
-		except Exception as e:
-			print(e)
+	if matching:
+		await ctx.send('Už jsi připojen do hry **'+games+'**')
 	else:
-		await ctx.send('Chybný počet parametrů příkazu ?join, zadej buď:\n ?join - pro vytvoření nové místnosti\n ?join <název místnosti> - pro připojení k existující hře (?join hra-1)')
+		guild = ctx.message.guild
+		roles = guild.roles
+		names = []
+		roleList = {}
+		for i in roles:
+			roleList[i.name] = i.id
+
+		for name in roles:
+			if name.name.startswith('hra-'):
+				names.append(name.name)
+		if len(args) == 1:
+			if args[0] in names:
+				if roleList[args[0]]:
+					rid = roleList[args[0]]
+					role = await guild.roles(rid)
+					await user.add_roles(role)
+			else:
+				await ctx.send('Taková hra neexistuje')
+
+		elif len(args) == 0:
+			if os.path.isfile(JSON_SERVERS):
+				currChannel = 1
+				with open(JSON_SERVERS, 'r') as outfile:
+					srv = json.load(outfile)
+					currChannel = int(srv['count'])
+			else:
+				currChannel = CURR_CH
+				with open(JSON_SERVERS, 'w') as outfile:
+					data = {'count': currChannel}
+					json.dump(data, outfile)
+
+			#await ctx.send(guild)
+			if not currChannel:
+				currChannel = 0
+			game = 'hra-'+str(currChannel)
+			try:
+				cat = guild.get_channel(GAME_CHANNEL).category
+				#print(cat.name)
+				
+				channel = await guild.create_text_channel(game, category=cat)
+				
+				with open(JSON_SERVERS, 'w') as outfile:
+					data = {'count': currChannel+1}
+					json.dump(data, outfile)		
+				
+				role = await guild.create_role(name=game)
+				await user.add_roles(role)
+				await ctx.send('User **'+user.name+'** has joined to **'+game+'**')
+			except Exception as e:
+				print(e)
+		else:
+			await ctx.send('Chybný počet parametrů příkazu ?join, zadej buď:\n ?join - pro vytvoření nové místnosti\n ?join <název místnosti> - pro připojení k existující hře (?join hra-1)')
