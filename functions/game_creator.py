@@ -8,6 +8,11 @@ import os.path
 async def ping(ctx):
     await ctx.send('pong')
 
+@client.event
+async def on_guild_channel_create(channel):
+	await channel.send(file=discord.File('./static/img/welcome_title.png'))
+	await channel.send(welcomeMSG)
+
 
 @client.command(pass_context=True)
 async def players(ctx):
@@ -15,6 +20,7 @@ async def players(ctx):
     roles = guild.roles
     roleList = {}
     chList = {}
+    empty = True
     for i in roles:
         roleList[i.name] = i
 
@@ -26,6 +32,10 @@ async def players(ctx):
     	   			if rol.name.startswith(game):
     	   				await ctx.send('```      '+players.name+'                                                                              ```')
     	   	await ctx.send('{}'.format('⠀'))
+    	   	empty = False
+    
+    if empty:
+    	await ctx.send('Nobody plays at the moment')
 
 
 @client.command(pass_context=True)
@@ -37,19 +47,32 @@ async def clear(ctx):
     for i in roles:
         roleList[i.name] = i
 
-    for name in roles:
-        if name.name.startswith('hra-'):
-            await roleList[name.name].delete()
-            await asyncio.sleep(1)
 
     cat = client.get_all_channels()
     for channel in cat:
         if channel.name.startswith('hra-'):
             chList[channel.name] = channel
 
-    for c in chList:
-        await chList[c].delete()
-        await asyncio.sleep(1)
+    
+    for name in roles.copy():
+        if name.name.startswith('hra-'):
+            try:
+            	await roleList[name.name].delete()
+            	print('deleting '+roleList[name.name])
+            	del roleList[name.name]
+            	await asyncio.sleep(0.1)
+            except:
+            	await asyncio.sleep(0.1)
+
+
+    for c in chList.copy():
+        try:
+        	await chList[c].delete()
+        	print('deleting '+chList[c])
+        	del chList[c]
+        	await asyncio.sleep(0.1)
+        except:
+        	await asyncio.sleep(0.1)
 
     with open(JSON_SERVERS, 'w') as outfile:
         data = {'count': 0}
@@ -78,17 +101,17 @@ async def join(ctx, *args):
         names = []
         roleList = {}
         for i in roles:
-            roleList[i.name] = i.id
-
+            roleList[i.name] = i
         for name in roles:
             if name.name.startswith('hra-'):
                 names.append(name.name)
+
         if len(args) == 1:
             if args[0] in names:
                 if roleList[args[0]]:
                     rid = roleList[args[0]]
-                    role = await guild.roles(rid)
-                    await user.add_roles(role)
+                    await user.add_roles(rid)
+                    await ctx.send('User **' + user.name + '** has joined to **' + rid.name + '**')
             else:
                 await ctx.send('Taková hra neexistuje')
 
@@ -104,13 +127,11 @@ async def join(ctx, *args):
                     data = {'count': currChannel}
                     json.dump(data, outfile)
 
-            # await ctx.send(guild)
             if not currChannel:
                 currChannel = 0
             game = 'hra-' + str(currChannel)
             try:
                 cat = guild.get_channel(GAME_CHANNEL).category
-                # print(cat.name)
 
                 channel = await guild.create_text_channel(game, category=cat)
 
