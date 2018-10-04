@@ -3,6 +3,11 @@ from . discord_connect import *
 import json
 import os.path
 
+# predicate for channel testing
+def in_channel(channel_id):
+    def predicate(ctx):
+        return ctx.message.channel.id == channel_id
+    return discord.ext.commands.check(predicate)
 
 @client.command(pass_context=True)
 async def ping(ctx):
@@ -10,35 +15,47 @@ async def ping(ctx):
 
 @client.event
 async def on_guild_channel_create(channel):
-	await channel.send(file=discord.File('./static/img/welcome_title.png'))
-	await channel.send(welcomeMSG)
-
+    await channel.send(file=discord.File('./static/img/welcome_title.png'))
+    await channel.send(welcomeMSG)
 
 @client.command(pass_context=True)
-async def players(ctx):
+@in_channel(GAME_CHANNEL)
+async def players(ctx, *games):
     guild = ctx.message.guild
     roles = guild.roles
-    roleList = {}
-    chList = {}
-    empty = True
-    for i in roles:
-        roleList[i.name] = i
+    actualGames = []
+    output_start = '**List of players**\n--------------------------------------\n'
+    output_end = ''
+    for g in roles:
+        if g.name.startswith('hra-'):
+        	actualGames.append(g.name)
 
-    for game in roleList:
-    	if game.startswith('hra-'):
-    	   	await ctx.send('**'+game+'**')
-    	   	for players in guild.members:
-    	   		for rol in players.roles:
-    	   			if rol.name.startswith(game):
-    	   				await ctx.send('```      '+players.name+'                                                                              ```')
-    	   	await ctx.send('{}'.format('⠀'))
-    	   	empty = False
-    
-    if empty:
-    	await ctx.send('Nobody plays at the moment')
+    def getPlayers(hra):
+        plrs = []
+        pnames = ''
+        for players in guild.members:
+            for rol in players.roles:
+                if rol.name.startswith(hra):
+                	plrs.append(players.name)
+        for names in plrs:
+            pnames += '\t'+names+'\n'
+        return pnames
+
+    if actualGames:
+        for game in actualGames:
+            output_start += '```'+game+'```'+getPlayers(game)
+        await ctx.send(output_start)
+    else:
+        await ctx.send('Nobody plays at the moment')
+
+@players.error
+async def info_error(ctx, error):
+    channel = ctx.author.guild.get_channel(GAME_CHANNEL)
+    await ctx.send('Send commands to {0.mention}'.format(channel))
 
 
 @client.command(pass_context=True)
+@in_channel(GAME_CHANNEL)
 async def clear(ctx):
     guild = ctx.message.guild
     roles = guild.roles
@@ -57,29 +74,34 @@ async def clear(ctx):
     for name in roles.copy():
         if name.name.startswith('hra-'):
             try:
-            	await roleList[name.name].delete()
-            	print('deleting '+roleList[name.name])
-            	del roleList[name.name]
-            	await asyncio.sleep(0.1)
+                await roleList[name.name].delete()
+                print('deleting '+roleList[name.name])
+                del roleList[name.name]
+                await asyncio.sleep(0.1)
             except:
-            	await asyncio.sleep(0.1)
+                await asyncio.sleep(0.1)
 
 
     for c in chList.copy():
         try:
-        	await chList[c].delete()
-        	print('deleting '+chList[c])
-        	del chList[c]
-        	await asyncio.sleep(0.1)
+            await chList[c].delete()
+            print('deleting '+chList[c])
+            del chList[c]
+            await asyncio.sleep(0.1)
         except:
-        	await asyncio.sleep(0.1)
+            await asyncio.sleep(0.1)
 
     with open(JSON_SERVERS, 'w') as outfile:
         data = {'count': 0}
         json.dump(data, outfile)
 
+@clear.error
+async def info_error(ctx, error):
+    channel = ctx.author.guild.get_channel(GAME_CHANNEL)
+    await ctx.send('Send commands to {0.mention}'.format(channel))
 
 @client.command(pass_context=True)
+@in_channel(GAME_CHANNEL)
 async def join(ctx, *args):
     user = ctx.message.author
     userRole = user.roles
@@ -152,7 +174,7 @@ async def join(ctx, *args):
                 perms.attach_files = False
                 perms.read_message_history = True
                 perms.mention_everyone = False
-				# noinspection SpellCheckingInspection
+                # noinspection SpellCheckingInspection
                 perms.external_emojis = False
                 perms.connect = False
                 perms.speak = False
@@ -179,3 +201,8 @@ async def join(ctx, *args):
         else:
             await ctx.send(
                 'Chybný počet parametrů příkazu ?join, zadej buď:\n ?join - pro vytvoření nové místnosti\n ?join <název místnosti> - pro připojení k existující hře (?join hra-1)')
+
+@join.error
+async def info_error(ctx, error):
+    channel = ctx.author.guild.get_channel(GAME_CHANNEL)
+    await ctx.send('Send commands to {0.mention}'.format(channel))
